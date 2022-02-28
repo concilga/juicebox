@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { Client } = require('pg');
 const client = new Client({
-    password: '@nnaCole1994',
+    password: process.env.DB_PASSWORD,
     user: 'postgres',
     database: 'juicebox',
     
@@ -79,6 +79,20 @@ async function getUserById(userId) {
     }
 
     user.posts = await getPostsByUser(userId);
+
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getUserByUsername(username) {
+  try {
+    const { rows: [user] } = await client.query(`
+      SELECT *
+      FROM users
+      WHERE username=$1;
+    `, [username]);
 
     return user;
   } catch (error) {
@@ -184,6 +198,15 @@ async function getPostById(postId) {
       FROM posts
       WHERE id=$1;
     `, [postId]);
+
+    // THIS IS NEW
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
+    // NEWNESS ENDS HERE
 
     const { rows: tags } = await client.query(`
       SELECT tags.*
@@ -337,5 +360,7 @@ module.exports = {
   createTags,
   getAllTags,
   createPostTag,
-  addTagsToPost
+  addTagsToPost,
+  getUserByUsername,
+  getPostById
 }
